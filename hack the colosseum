@@ -1,0 +1,147 @@
+import random
+
+class Asset:
+    def __init__(self, name, price, asset_type):
+        self.name = name
+        self.price = price
+        self.asset_type = asset_type
+    
+    def update_price(self, market_trend):
+        if self.asset_type == "Stock":
+            change = random.uniform(0.05, 0.15) if market_trend == "bull" else random.uniform(-0.15, -0.05)
+            self.price *= (1 + change)
+        elif self.asset_type == "Index Fund":
+            change = random.uniform(0.03, 0.1) if market_trend == "bull" else random.uniform(-0.1, -0.03)
+            self.price *= (1 + change)
+        elif self.asset_type == "Bond":
+            change = random.uniform(-0.01, 0.01)
+            self.price *= (1 + change)
+        elif self.asset_type in ["Gold", "Cotton", "Wheat", "Silver", "Copper", "Palladium"]:
+            change = random.uniform(0.02, 0.1) if market_trend == "bear" else random.uniform(-0.02, 0.02)
+            self.price *= (1 + change)
+
+class Player:
+    def __init__(self, starting_money):
+        self.money = starting_money
+        self.portfolio = {}
+
+    def buy_asset(self, asset, quantity):
+        cost = asset.price * quantity
+        if cost > self.money:
+            print("Not enough money to buy asset.")
+            return False
+        self.money -= cost
+        if asset.name in self.portfolio:
+            self.portfolio[asset.name] += quantity
+        else:
+            self.portfolio[asset.name] = quantity
+        print(f"Bought {quantity} of {asset.name}.")
+        return True
+
+    def sell_asset(self, asset, quantity):
+        if asset.name not in self.portfolio or self.portfolio[asset.name] < quantity:
+            print("Not enough assets to sell.")
+            return False
+        self.portfolio[asset.name] -= quantity
+        self.money += asset.price * quantity
+        print(f"Sold {quantity} of {asset.name}.")
+        return True
+
+    def show_portfolio(self):
+        print("\nCurrent Portfolio:")
+        for asset, quantity in self.portfolio.items():
+            print(f"{asset}: {quantity} units")
+        print(f"Cash: ${self.money:.2f}")
+
+    def total_value(self):
+        total_assets_value = sum(asset.price * quantity for asset, quantity in self.portfolio.items())
+        return self.money + total_assets_value
+
+def main():
+    # Create a variety of assets
+    assets = [
+        Asset("TechCorp", 100, "Stock"),
+        Asset("HealthInc", 50, "Stock"),
+        Asset("FinanceGroup", 200, "Stock"),
+        Asset("RetailGiant", 120, "Stock"),
+        Asset("AutoWorks", 75, "Stock"),
+        Asset("EnergyPlus", 90, "Stock"),
+        Asset("TelecomCo", 80, "Stock"),
+        Asset("Gold", 1800, "Commodity"),
+        Asset("Cotton", 100, "Commodity"),
+        Asset("Wheat", 50, "Commodity"),
+        Asset("Silver", 25, "Commodity"),
+        Asset("Copper", 4, "Commodity"),
+        Asset("Palladium", 2000, "Commodity"),
+        Asset("S&P 500 Index Fund", 300, "Index Fund"),
+        Asset("Bond A", 100, "Bond"),
+        Asset("Bond B", 150, "Bond"),
+    ]
+    
+    # Create a player
+    player = Player(1000)  # Starting with $1000
+
+    market_trends = ["bull", "bear"]
+    current_trend = random.choice(market_trends)
+    months_passed = 0
+
+    while months_passed < 120:
+        print(f"\nCurrent Market Trend: {current_trend.capitalize()} Market")
+        print("\nAvailable assets:")
+        for i, asset in enumerate(assets):
+            print(f"{i + 1}: {asset.name} - ${asset.price:.2f} (Type: {asset.asset_type})")
+        
+        player.show_portfolio()
+        
+        # Monthly investment opportunity
+        print("\nYou have $1,000 to invest this month.")
+        invest_action = input("Do you want to invest this money? (y/n): ").lower()
+        if invest_action == 'y':
+            while True:
+                try:
+                    invest_choice = int(input("Enter the asset number to invest in: ")) - 1
+                    quantity = int(input("Enter the quantity to buy: "))
+                    if 0 <= invest_choice < len(assets) and quantity > 0:
+                        if player.buy_asset(assets[invest_choice], quantity):
+                            break
+                    else:
+                        print("Invalid asset number or quantity.")
+                except ValueError:
+                    print("Please enter a valid number.")
+
+        # Monthly selling opportunity
+        sell_action = input("\nDo you want to sell any assets? (y/n): ").lower()
+        if sell_action == 'y':
+            while True:
+                player.show_portfolio()
+                try:
+                    sell_choice = int(input("Enter the asset number to sell: ")) - 1
+                    quantity = int(input("Enter the quantity to sell: "))
+                    if 0 <= sell_choice < len(assets) and quantity > 0:
+                        if player.sell_asset(assets[sell_choice], quantity):
+                            break
+                    else:
+                        print("Invalid asset number or quantity.")
+                except ValueError:
+                    print("Please enter a valid number.")
+
+        # Update asset prices based on market trend
+        for asset in assets:
+            asset.update_price(current_trend)
+        
+        # Randomly change market trend
+        if random.random() < 0.3:  # 30% chance to switch trends
+            current_trend = "bull" if current_trend == "bear" else "bear"
+
+        # Check for win condition
+        if player.total_value() >= 100000:
+            print("\nCongratulations! You've reached $100,000 in total value!")
+            break
+        
+        months_passed += 1
+
+    if months_passed == 120:
+        print("\nGame Over! You've played for 120 months.")
+
+if __name__ == "__main__":
+    main()
